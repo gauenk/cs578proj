@@ -6,6 +6,10 @@ from svm import SupportVectorMachine
 from data_class import *
 from tree_classes import *
 from utils import *
+from sklearn.svm import LinearSVC
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.datasets import make_classification
+
 
 def k_fold_cross_validation(tr_data,tr_labels,split_number):
 
@@ -34,12 +38,16 @@ def k_fold_cross_validation(tr_data,tr_labels,split_number):
         cv_te_data = add_bias_term(cv_te_data)
 
         ## NAIVE DECLARED HERE TO BE INIT-ed WITH THE DATA FOR CROSS VALIDATION
+        nb = MultinomialNB()
+        nb.fit(cv_tr_data,cv_tr_labels)
+        preds = nb.predict(cv_te_data)
+        loss = zero_one_loss(preds,cv_te_labels)        
+        nb_zo_loss += [loss]
+        
 
         ## SVM DECLARED HERE TO BE INIT-ed WITH THE DATA FOR CROSS VALIDATION
-        svm = SupportVectorMachine(len(cv_tr_data[0]),0.5,0.01)
-
-        svm.train(cv_tr_data,cv_tr_labels)
-
+        svm = LinearSVC()
+        svm.fit(cv_tr_data,cv_tr_labels)
         preds = svm.predict(cv_te_data)
         loss = zero_one_loss(preds,cv_te_labels)        
         svm_zo_loss += [loss]
@@ -47,7 +55,6 @@ def k_fold_cross_validation(tr_data,tr_labels,split_number):
     return np.array(nb_zo_loss),np.array(svm_zo_loss)
 
 def plot_experiment(nb_losses,svm_losses,xaxis_var,xlabel,cv_split_number,fn=None):
-
     model_losses = {"nb":[nb_losses,"b--"],"svm":[svm_losses,"g--"]}
     model_lines = {}
     for model in model_losses.keys():
@@ -56,11 +63,9 @@ def plot_experiment(nb_losses,svm_losses,xaxis_var,xlabel,cv_split_number,fn=Non
             sderr = np.std(model_losses[model][0],1)/cv_split_number
             model_lines[model] = plt.errorbar(xaxis_var,mean,\
                     sderr,fmt=model_losses[model][1],label=model)
-
     plt.legend(list(model_lines.values()),list(model_lines.keys()))
     plt.xlabel(xlabel)
     plt.ylabel("Zero-One Loss")
-
     if fn is None:
         plt.show()
     else:
@@ -69,28 +74,22 @@ def plot_experiment(nb_losses,svm_losses,xaxis_var,xlabel,cv_split_number,fn=Non
 def test_model():
     if len(sys.argv) != 4:
         print("System Usage: python main.py <trainingDataFilename> <testingDataFilename> <modelIdx>")
-        print("modelIdx\n   1 : decision tree\n   2 : bagging\n   3 : random forests")
+        print("modelIdx\n   1 : naive bayes \n   2 : svm\n")
         sys.exit()
     else:
         tr_data,tr_labels,cw = get_data(sys.argv[1],c_words=None,total_f=1000)
         te_data,te_labels,_ = get_data(sys.argv[2],c_words=cw,total_f=1000)
 
         if sys.argv[3] == "1":
-            model = DecisionTree(tr_data,tr_labels)
-            post_fix = "DT"
+            model = MultinomialNB()
+            post_fix = "NB"
         elif sys.argv[3] == "2":
-            model = Bagging(tr_data,tr_labels)
-            post_fix = "BT"
-        elif sys.argv[3] == "3":
-            model = RandomForest(tr_data,tr_labels)
-            post_fix = "RF"
-        elif sys.argv[3] == "4":
-            model = RandomForest(tr_data,tr_labels)
-            post_fix = "RF"
+            model = LinearSVC()
+            post_fix = "SVM"
         else:
-            sys.exit("modelIdx must be in {1,2,3}")
+            sys.exit("modelIdx must be in {1,2}")
 
-        model.train()
+        model.fit(tr_data,tr_labels)
         preds = model.predict(te_data)
         loss = zero_one_loss(preds,te_labels)
         print("ZERO-ONE-LOSS-" + post_fix +" {0:.4f}".format(round(float(loss),4)))
