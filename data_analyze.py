@@ -2,7 +2,7 @@ from sklearn.svm import LinearSVC
 import pandas as pd
 import numpy as np
 
-input_data = "~/CS578/proj/data/data_no90s.csv"
+input_data = "data/training_clean.csv"
 
 df = pd.read_csv(input_data)
 
