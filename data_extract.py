@@ -8,7 +8,7 @@ output_csv = 'data/data.csv'
 # Find max value of ALCUS30D
 
 # Want to predict COCEVER + CRKEVER - convert into one column
-# COCCRK
+# CRKCOC
 
 # Throw out rows with responses which start with 9 (or replace with average response)
 # Except 91, 93
