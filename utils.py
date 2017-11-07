@@ -69,15 +69,18 @@ def generate_vectors(dataset, common_words):
     return np.array(vectors), np.array(labels)
 
 
-def get_data(fn,skip=100,total_f=1500,c_words=None):
-    train_data_file = fn
-    train_data = read_dataset(train_data_file)
-    common_words = c_words
-    if common_words is None:
-        common_words = get_most_commons(train_data, skip=100, total=total_f)
-    train_f, train_l = generate_vectors(train_data, common_words)
-    return train_f,train_l,common_words
+# def get_data(fn,skip=100,total_f=1500,c_words=None):
+#     train_data_file = fn
+#     train_data = read_dataset(train_data_file)
+#     common_words = c_words
+#     if common_words is None:
+#         common_words = get_most_commons(train_data, skip=100, total=total_f)
+#     train_f, train_l = generate_vectors(train_data, common_words)
+#     return train_f,train_l,common_words
 
+# def get_data(fn,skip=100,total_f=1500,c_words=None):
+
+    
 def split_data(data,labels,split_number,cv_index):
 
     data_size = len(data)

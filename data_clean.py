@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-input_data = "~/CS578/proj/data/data.csv"
+input_data = "data/data.csv"
 
 df_all = pd.read_csv(input_data)
 
@@ -70,5 +70,5 @@ def process_data(df) :
 train_clean = process_data(train_raw)
 test_clean = process_data(test_raw)
 
-train_clean.to_csv("~/CS578/proj/data/training_clean.csv", index = False)
-test_clean.to_csv("~/CS578/proj/data/testing_clean.csv", index = False)
+train_clean.to_csv("training_clean.csv", index = False)
+test_clean.to_csv("testing_clean.csv", index = False)
