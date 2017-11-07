@@ -48,28 +48,28 @@ def k_fold_cross_validation(tr_data,tr_labels,split_number):
         nb_zo_loss += [loss]
         
         ## SVM DECLARED HERE TO BE INIT-ed WITH THE DATA FOR CROSS VALIDATION
-        svm = LinearSVC(C=0.25,penalty='l2', loss='squared_hinge', dual=False)
+        svm = LinearSVC(penalty='l1',C=0.01,dual=False)
         svm.fit(cv_tr_data,cv_tr_labels)
         preds = svm.predict(cv_te_data)
         loss = zero_one_loss(preds,cv_te_labels)        
         svm_zo_loss += [loss]
 
         ## SVM_C1 DECLARED HERE TO BE INIT-ed WITH THE DATA FOR CROSS VALIDATION
-        svm_c1 = LinearSVC(C=10000,penalty='l2', loss='squared_hinge', dual=False)
+        svm_c1 = LinearSVC(penalty='l1',C=0.1,dual=False)
         svm_c1.fit(cv_tr_data,cv_tr_labels)
         preds = svm_c1.predict(cv_te_data)
         loss = zero_one_loss(preds,cv_te_labels)        
         svm_c1_zo_loss += [loss]
 
         ## SVM_C2 DECLARED HERE TO BE INIT-ed WITH THE DATA FOR CROSS VALIDATION
-        svm_c2 = LinearSVC(C=0.0001,penalty='l2', loss='squared_hinge', dual=False)
+        svm_c2 = LinearSVC(penalty='l1',C=1,dual=False)
         svm_c2.fit(cv_tr_data,cv_tr_labels)
         preds = svm_c2.predict(cv_te_data)
         loss = zero_one_loss(preds,cv_te_labels)        
         svm_c2_zo_loss += [loss]
 
         ## SVM_C3 DECLARED HERE TO BE INIT-ed WITH THE DATA FOR CROSS VALIDATION
-        svm_c3 = LinearSVC(C=1.0,penalty='l2', loss='squared_hinge', dual=False)
+        svm_c3 = LinearSVC(penalty='l1',C=1.0,dual=False)
         svm_c3.fit(cv_tr_data,cv_tr_labels)
         preds = svm_c3.predict(cv_te_data)
         loss = zero_one_loss(preds,cv_te_labels)        
@@ -107,7 +107,7 @@ def test_model():
             model = MultinomialNB()
             post_fix = "NB"
         elif sys.argv[3] == "2":
-            model = LinearSVC()
+            model = LinearSVC(penalty='l1',C=.1,dual=False)
             post_fix = "SVM"
         else:
             sys.exit("modelIdx must be in {1,2}")
@@ -157,7 +157,7 @@ def experiment_1(data,labels,cv_split_number):
 
 if __name__ == "__main__":
 
-    if False:
+    if True:
         test_model()
     else:
         if len(sys.argv) < 3:
