@@ -1,3 +1,4 @@
+import pandas as pd
 import sys,string,datetime,csv
 import numpy as np
 from collections import Counter
@@ -13,7 +14,7 @@ def input_vector_from_svm(labels_i):
             labels_i[i] = 0
 
 def zero_one_loss(preds,labels):
-    return len([1 for i,j in zip(preds,labels) if i != j])/len(labels)
+    return len([1 for i,j in zip(preds,labels) if i != j])/float(len(labels))
 
 def add_bias_term(data):
     return np.hstack((data,np.ones(data.shape[0])[:,np.newaxis]))
@@ -78,28 +79,28 @@ def generate_vectors(dataset, common_words):
 #     train_f, train_l = generate_vectors(train_data, common_words)
 #     return train_f,train_l,common_words
 
-# def get_data(fn,skip=100,total_f=1500,c_words=None):
-
+def get_data(fn):
+    input_data = "data/training_clean.csv"
+    df = pd.read_csv(input_data)
+    mat = df.as_matrix()
+    print(mat.shape)
+    print(mat[:,0:-1].shape,mat[:,-1].shape)
+    return mat[:,0:-1],mat[:,-1]
     
 def split_data(data,labels,split_number,cv_index):
 
     data_size = len(data)
     cv_size = int(data_size/split_number)
 
-    tr_index_A = int((cv_index+1)*cv_size % data_size)
-    tr_index_B = int((cv_index+2)*cv_size % data_size)
-
-    tr_index_C = int((cv_index+2)*cv_size % data_size)
-    tr_index_D = int((cv_index+3)*cv_size % data_size)
-
     te_index_A = int(cv_index*cv_size)
     te_index_B = int((cv_index+1)*cv_size)
     
-    
-    cv_tr_data = np.concatenate((data[tr_index_A:tr_index_B],\
-                                 data[tr_index_C:tr_index_D]),0)
-    cv_tr_labels = np.concatenate((labels[tr_index_A:tr_index_B],\
-                                 labels[tr_index_C:tr_index_D]),0)
+    cv_tr_data = np.concatenate((data[:te_index_A],\
+                                 data[te_index_B:]),0)
+
+    cv_tr_labels = np.concatenate((labels[:te_index_A],\
+                                 labels[te_index_B:]),0)
+
     cv_te_data = data[te_index_A:te_index_B]
     cv_te_labels = labels[te_index_A:te_index_B]
 
