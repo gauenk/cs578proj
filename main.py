@@ -137,7 +137,7 @@ def _plot_experiment_params(svm_params,svm_c1_params,svm_c2_params,svm_c3_params
             
 def plot_experiment_params(svm_params,svm_c1_params,svm_c2_params,svm_c3_params,xaxis_var,xlabel,cv_split_number,fn):
     print("-=-=-=-=-=-=-=-=-\nPLOTTING PARAMETER VALUES\n-=-=-=-=-=-=-=-=-")
-    model_params = {"svm: c = 0.25":[svm_c1_params,"g--"],"svm: c = 0.50":[svm_c2_params,"r--"],"svm: c = 0.75":[svm_c3_params,"k--"],"svm: c = 1.0":[svm_params,"y--"]}
+    model_params = {"svm: c = 0.75":[svm_c1_params,"g--"],"svm: c = 0.50":[svm_c2_params,"r--"],"svm: c = 0.25":[svm_c3_params,"k--"],"svm: c = 1.0":[svm_params,"y--"]}
     tr_size_idx = len(xaxis_var)-1
     for model in model_params.keys():
         plt.figure(figsize=(20,6))
@@ -192,10 +192,11 @@ def experiment_1(data,labels,cv_split_number):
     svm_c2_params = []
     svm_c3_params = []
 
-    #data_balance = [0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,1.0]
+    data_balance = [0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,1.0]
     #data_balance = [0.01,0.05,0.10]
-    data_balance = [0.01,0.02,0.03]
+    #data_balance = [0.01,0.02,0.03]
     for i in data_balance:
+        print('Processing: ' + str(i))
         # cross validation training data
         cv_tr_data = tr_data[:int(tr_data_size*i),:]
         # cross validation labels
@@ -217,9 +218,9 @@ def experiment_1(data,labels,cv_split_number):
 
     model_losses = {"nb": nb_losses,
                     "svm: c = 1.0": svm_losses,
-                    "svm: c = 0.25": svm_c1_losses,
+                    "svm: c = 0.75": svm_c1_losses,
                     "svm: c = 0.50": svm_c2_losses,
-                    "svm: c = 0.75": svm_c3_losses,
+                    "svm: c = 0.25": svm_c3_losses,
     }
     write_losses(model_losses,data_balance,"exp1")
 
@@ -256,9 +257,9 @@ def experiment_2(tr_data,tr_labels,te_data,te_labels,cv_split_number):
 
     model_losses = {"nb": nb_losses,
                     "svm: c = 1.0": svm_losses,
-                    "svm: c = 0.25": svm_c1_losses,
+                    "svm: c = 0.75": svm_c1_losses,
                     "svm: c = 0.50": svm_c2_losses,
-                    "svm: c = 0.75": svm_c3_losses,
+                    "svm: c = 0.25": svm_c3_losses,
     }
 
     write_losses(model_losses,data_balance,"exp1")
@@ -274,7 +275,7 @@ if __name__ == "__main__":
         test_model()
     else:
         if len(sys.argv) < 3:
-            print("Usaege: python main.py <data_file> <exp_no>")
+            print("Usage: python main.py <data_file> <exp_no>")
         exp_no = sys.argv[2]
 
         cv_split_number=10
@@ -288,8 +289,8 @@ if __name__ == "__main__":
 
         if exp_no == "1" or exp_no == "-1":
             nb_losses,svm_losses,svm_c1_losses,svm_c2_losses,svm_c3_losses,svm_params,svm_c1_params,svm_c2_params,svm_c3_params,xaxis_var,xlabel = experiment_1(tr_data,tr_labels,cv_split_number)
-            plot_experiment_losses(nb_losses,svm_losses,svm_c1_losses,svm_c2_losses,svm_c3_losses,xaxis_var,xlabel,cv_split_number,"./figures/exp_1_losses.pdf")
-            plot_experiment_params(svm_params,svm_c1_params,svm_c2_params,svm_c3_params,xaxis_var,"Parameters",cv_split_number,"./figures/exp_1_params_{:s}_.pdf")
+            plot_experiment_losses(nb_losses,svm_losses,svm_c1_losses,svm_c2_losses,svm_c3_losses,xaxis_var,xlabel,cv_split_number,"./figures/exp_1_losses.png")
+            plot_experiment_params(svm_params,svm_c1_params,svm_c2_params,svm_c3_params,xaxis_var,"Parameters",cv_split_number,"./figures/exp_1_params_{:s}_.png")
         if exp_no == "2" or exp_no == "-1":
             nb_losses,svm_losses,svm_c1_losses,svm_c2_losses,svm_c3_losses,xaxis_var,xlabel = experiment_2(tr_data,tr_labels,te_data,te_labels,cv_split_number)
             plot_experiment_losses(nb_losses,svm_losses,svm_c1_losses,svm_c2_losses,svm_c3_losses,xaxis_var,xlabel,cv_split_number,"./figures/exp_2.pdf")
