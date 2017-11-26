@@ -2,7 +2,6 @@
 import os,sys,re,math,operator,string
 import numpy as np
 import matplotlib
-# matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from utils import *
 from ClassifierResult import *
