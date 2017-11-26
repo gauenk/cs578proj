@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 import os,sys,re,math,operator,string
 import numpy as np
+import matplotlib
+# matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from utils import *
 from ClassifierResult import *
 from sklearn.svm import LinearSVC
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.datasets import make_classification
-import matplotlib
 
 def k_fold_cross_validation(tr_data,tr_labels,split_number):
 
@@ -16,7 +17,7 @@ def k_fold_cross_validation(tr_data,tr_labels,split_number):
     nb1 = ClassifierResult('Naive Bayes', [])
     svm1 = SVMClassifierResult('svm: c = 1.0', [], [])
     svm2 = SVMClassifierResult('svm: c = 0.75', [], [])
-    svm3 = SVMClassifierResult('svm: c = 0.5', [], [])
+    svm3 = SVMClassifierResult('svm: c = 0.50', [], [])
     svm4 = SVMClassifierResult('svm: c = 0.25', [], [])
 
     # grab what size the chunks should be
@@ -106,29 +107,8 @@ def plot_experiment_losses(model_losses, xaxis_var, xlabel, cv_split_number, lin
     else:
         plt.savefig(fn,bbox_inches='tight')
     plt.clf()
-
-def _plot_experiment_params(svm_params,svm_c1_params,svm_c2_params,svm_c3_params,xaxis_var,xlabel,cv_split_number,fn):
-    print("-=-=-=-=-=-=-=-=-\nPLOTTING PARAMETER VALUES\n-=-=-=-=-=-=-=-=-")
-    model_params = {"svm: c = 0.25":[svm_c1_params,"g--"],"svm: c = 0.50":[svm_c2_params,"r--"],"svm: c = 0.75":[svm_c3_params,"k--"],"svm: c = 1.0":[svm_params,"y--"]}
-
-    for tr_size_idx in range(len(xaxis_var)):
-        model_lines = {}
-        for model in model_params.keys():
-            mean = np.mean(model_params[model][0][tr_size_idx],0)
-            sderr = np.std(model_params[model][0][tr_size_idx],0)/cv_split_number
-            model_lines[model] = plt.errorbar(np.arange(len(mean)),mean,\
-                                              sderr,fmt=model_params[model][1],label=model,fontsize=5)
-                
-        plt.legend(list(model_lines.values()),list(model_lines.keys()),fontsize=8)
-        plt.xlabel(xlabel)
-        plt.ylabel("SVM Coefficient Value")
-        if fn is None:
-            plt.show()
-        else:
-            plt.savefig(fn.format(xaxis_var[tr_size_idx]),bbox_inches='tight')
-        plt.clf()
             
-def plot_experiment_params(model_params, xaxis_var, xlabel, cv_split_number, fn):
+def plot_experiment_params(model_params, xaxis_var, cv_split_number, fn=None):
     print("-=-=-=-=-=-=-=-=-\nPLOTTING PARAMETER VALUES\n-=-=-=-=-=-=-=-=-")
     # Plot the highest training size params
     tr_size_idx = len(xaxis_var)-1
@@ -136,11 +116,13 @@ def plot_experiment_params(model_params, xaxis_var, xlabel, cv_split_number, fn)
         plt.figure(figsize=(20,6))
         plt.ylabel("SVM Coefficient Value")
         plt.xlabel("Coefficient Index")
-        plt.boxplot(x=model_params[model][tr_size_idx],sym="")
+        data = np.array(model_params[model][tr_size_idx])
+        plt.boxplot(x=data,sym="")
         if fn is None:
             plt.show()
         else:
-            plt.savefig(fn.format(model),bbox_inches='tight')
+            filename = fn.format(model.replace(' ', '_').replace('=', '').replace(':', '').replace('.', '_'))
+            plt.savefig(filename, bbox_inches='tight')
         plt.clf()
             
 
@@ -247,4 +229,4 @@ if __name__ == "__main__":
         if exp_no == "1" or exp_no == "-1":
             model_losses, model_params, cv_training_sizes = experiment_1(tr_data, tr_labels, cv_split_number)
             plot_experiment_losses(model_losses, cv_training_sizes, 'Cross Validation Sample Size', cv_split_number, line_types, './figures/exp_1_losses.png')
-            plot_experiment_params(model_params, cv_training_sizes, 'Parameters', cv_split_number, './figures/exp_1_params_{:s}_.png')
+            plot_experiment_params(model_params, cv_training_sizes, cv_split_number, './figures/exp_1_params_{}.png')
