@@ -122,8 +122,6 @@ def write_stats(model_losses):
 
         
 def write_losses(model_losses,data_balance,exp_no):
-
-
     fn = "./output/" + exp_no + "_" +str(datetime.datetime.now()).replace(" ","_").replace(":","-").replace(".","")
     for idx in range(len(data_balance)):
         fn_c = fn + "_data_bal_"+str(data_balance[idx]) + ".csv"
