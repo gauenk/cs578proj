@@ -178,7 +178,13 @@ def greedy_subset_svm(tr_data, tr_labels, num_features, split_number):
         print('Fold: ' + str(i))
         cv_tr_data,cv_tr_labels,cv_te_data,cv_te_labels\
             = split_data(tr_data,tr_labels,split_number,i)
-        cv_training_data = np.array(cv_tr_data)
+        
+        # We want to use some of the training data as 'validation' data for picking
+        # the best subset.  We will use 90% of the data for training, 10% for validation.
+        cv_training_data = np.array(cv_tr_data[:int(len(cv_tr_data)*.9)])
+        cv_training_labels = cv_tr_labels[:int(len(cv_tr_labels)*.9)]
+        cv_validation_data = np.array(cv_tr_data[int(len(cv_tr_data)*.9):])
+        cv_validation_labels = cv_tr_labels[int(len(cv_tr_labels)*.9):]
 
         ## NAIVE DECLARED HERE TO BE INIT-ed WITH THE DATA FOR CROSS VALIDATION
         # nb = MultinomialNB()
@@ -202,9 +208,9 @@ def greedy_subset_svm(tr_data, tr_labels, num_features, split_number):
                 data[:, list(params_to_keep)] = cv_training_data[:, list(params_to_keep)]
                 params_to_keep.discard(k)
 
-                svm.fit(data, cv_tr_labels)
-                preds = svm.predict(cv_te_data)
-                loss = zero_one_loss(preds, cv_te_labels)
+                svm.fit(data, cv_training_labels)
+                preds = svm.predict(cv_validation_data)
+                loss = zero_one_loss(preds, cv_validation_labels)
                 if (loss <= best_loss):
                     best_feature = k
                     best_loss = loss
@@ -214,7 +220,8 @@ def greedy_subset_svm(tr_data, tr_labels, num_features, split_number):
         svm = LinearSVC(penalty = 'l2', C = 0.25, dual=False)
         data = np.zeros(cv_training_data.shape)
         data[:, list(params_to_keep)] = cv_training_data[:, list(params_to_keep)]
-        svm.fit(data, cv_tr_labels)
+        svm.fit(data, cv_training_labels)
+        # Use the real cross validation testing data now to get an accurate loss
         preds = svm.predict(cv_te_data)
         loss = zero_one_loss(preds, cv_te_labels)
         svm1.zero_one_loss += [loss]
