@@ -22,39 +22,17 @@ def k_fold_cross_validation(tr_data,tr_labels,split_number):
 
     # zero-one losses for naive bayes (nb) and support vector machine (svm)
 
-    nb1 = ClassifierResult('Naive Bayes', [])
+    nb1 = ClassifierResult('Naive Bayes (L1 features)', [])
     svm1 = SVMClassifierResult('svm: c = 1.0', [], [])
     svm2 = SVMClassifierResult('svm: c = 0.75', [], [])
     svm3 = SVMClassifierResult('svm: c = 0.50', [], [])
     svm4 = SVMClassifierResult('svm: c = 0.25', [], [])
-
-    # grab what size the chunks should be
-    chunk = int(len(tr_data)/split_number)
-
-    # set the start and end index
-    te_start_index = 0
-    te_end_index = chunk
-
-    # set the start and end index
-    tr_start_index = te_end_index
-    tr_end_index = len(tr_data)
+    naive = ClassifierResult('Naive Classifier', [])
 
 
     for i in range(split_number):
-
         cv_tr_data,cv_tr_labels,cv_te_data,cv_te_labels\
             = split_data(tr_data,tr_labels,split_number,i)
-
-        ## add bias terms -- do we need it?
-        # cv_tr_data = add_bias_term(cv_tr_data)
-        # cv_te_data = add_bias_term(cv_te_data)
-
-        ## NAIVE DECLARED HERE TO BE INIT-ed WITH THE DATA FOR CROSS VALIDATION
-        nb = MultinomialNB()
-        nb.fit(cv_tr_data,cv_tr_labels)
-        preds = nb.predict(cv_te_data)
-        loss = zero_one_loss(preds,cv_te_labels)        
-        nb1.zero_one_loss += [loss]
         
         ## SVM DECLARED HERE TO BE INIT-ed WITH THE DATA FOR CROSS VALIDATION
         svm = LinearSVC(penalty='l1',C=1.0,dual=False)
@@ -88,7 +66,19 @@ def k_fold_cross_validation(tr_data,tr_labels,split_number):
         svm4.zero_one_loss += [loss]
         svm4.params += [svm.coef_.ravel()]
 
-    return nb1, svm1, svm2, svm3, svm4
+        nb = MultinomialNB()
+        params_to_use = [i for i,x in enumerate(svm_c2.coef_.ravel()) if x != 0]
+        nb.fit(cv_tr_data[:, list(params_to_use)],cv_tr_labels)
+        preds = nb.predict(cv_te_data[:, list(params_to_use)])
+        loss = zero_one_loss(preds,cv_te_labels)        
+        nb1.zero_one_loss += [loss]
+
+        # Naive
+        preds = [2 for x in range(len(cv_te_labels))]
+        loss = zero_one_loss(preds, cv_te_labels)
+        naive.zero_one_loss += [loss]
+
+    return nb1, svm1, svm2, svm3, svm4, naive
 
 def plot_experiment_losses(model_losses, xaxis_var, xlabel, cv_split_number, line_types, fn = None):
     print("-=-=-=-=-=-=-=-=-\nPLOTTING LOSS VALUES\n-=-=-=-=-=-=-=-=-")
@@ -160,19 +150,8 @@ def test_model():
 
 def greedy_subset_svm(tr_data, tr_labels, num_features, split_number):
     nb1 = ClassifierResult('GS Naive Bayes', [])
-    svm1 = SVMClassifierResult('GS svm: c = 0.25', [], [])
-
-    # grab what size the chunks should be
-    chunk = int(len(tr_data)/split_number)
-
-    # set the start and end index
-    te_start_index = 0
-    te_end_index = chunk
-
-    # set the start and end index
-    tr_start_index = te_end_index
-    tr_end_index = len(tr_data)
-
+    svm1 = SVMClassifierResult('GS svm: c = 0.5', [], [])
+    naive = ClassifierResult('Naive Classifier', [])
 
     for i in range(split_number):
         print('Fold: ' + str(i))
@@ -185,13 +164,6 @@ def greedy_subset_svm(tr_data, tr_labels, num_features, split_number):
         cv_training_labels = cv_tr_labels[:int(len(cv_tr_labels)*.9)]
         cv_validation_data = np.array(cv_tr_data[int(len(cv_tr_data)*.9):])
         cv_validation_labels = cv_tr_labels[int(len(cv_tr_labels)*.9):]
-
-        ## NAIVE DECLARED HERE TO BE INIT-ed WITH THE DATA FOR CROSS VALIDATION
-        # nb = MultinomialNB()
-        # nb.fit(cv_tr_data,cv_tr_labels)
-        # preds = nb.predict(cv_te_data)
-        # loss = zero_one_loss(preds,cv_te_labels)        
-        # nb1.zero_one_loss += [loss]
         
         params_to_keep = set()
         for j in range(num_features):
@@ -201,7 +173,7 @@ def greedy_subset_svm(tr_data, tr_labels, num_features, split_number):
             best_loss = 1.0
             for k in range(cv_training_data.shape[1]):
                 if k in params_to_keep: continue
-                svm = LinearSVC(penalty = 'l2', C = 0.25, dual=False)
+                svm = LinearSVC(penalty = 'l2', C = 0.5, dual=False)
                 data = np.zeros(cv_training_data.shape)
                 params_to_keep.add(k)
                 # print('Trying: ' + str(params_to_keep))
@@ -217,7 +189,7 @@ def greedy_subset_svm(tr_data, tr_labels, num_features, split_number):
             params_to_keep.add(best_feature)
         
         # We now have the best features
-        svm = LinearSVC(penalty = 'l2', C = 0.25, dual=False)
+        svm = LinearSVC(penalty = 'l2', C = 0.5, dual=False)
         data = np.zeros(cv_training_data.shape)
         data[:, list(params_to_keep)] = cv_training_data[:, list(params_to_keep)]
         svm.fit(data, cv_training_labels)
@@ -226,8 +198,19 @@ def greedy_subset_svm(tr_data, tr_labels, num_features, split_number):
         loss = zero_one_loss(preds, cv_te_labels)
         svm1.zero_one_loss += [loss]
         svm1.params += [svm.coef_.ravel()]
+
+        nb = MultinomialNB()
+        nb.fit(cv_training_data[:, list(params_to_keep)], cv_training_labels)
+        preds = nb.predict(cv_te_data[:, list(params_to_keep)])
+        loss = zero_one_loss(preds,cv_te_labels)        
+        nb1.zero_one_loss += [loss]
+
+        # Naive
+        preds = [2 for x in range(len(cv_te_labels))]
+        loss = zero_one_loss(preds, cv_te_labels)
+        naive.zero_one_loss += [loss]
     
-    return nb1, svm1
+    return nb1, svm1, naive
 
 def experiment_2(data, labels, num_features, cv_split_number):
     tr_data = data
@@ -236,10 +219,11 @@ def experiment_2(data, labels, num_features, cv_split_number):
 
     nb_losses = []
     svm_losses = []
+    naive_losses = []
 
     svm_params = []
 
-    data_balance = [0.01, 0.02, 0.03]
+    data_balance = [0.01, 0.02, 0.1]
     for i in data_balance:
         print('Processing: ' + str(i))
 
@@ -248,25 +232,25 @@ def experiment_2(data, labels, num_features, cv_split_number):
         # cross validation labels
         cv_tr_labels = tr_labels[:int(tr_data_size*i)]
 
-        nb, svm = greedy_subset_svm(cv_tr_data, cv_tr_labels, num_features, cv_split_number)
+        nb, svm, naive = greedy_subset_svm(cv_tr_data, cv_tr_labels, num_features, cv_split_number)
 
         nb_losses += [nb.zero_one_loss] # list of lists where each row is cv_split_number
         svm_losses += [svm.zero_one_loss]
+        naive_losses += [naive.zero_one_loss]
 
         svm_params += [svm.params]
     
-    nb_model_losses = {
-        nb.name: nb_losses
-    }
-    svm_model_losses = {
-        svm.name: svm_losses
+    model_losses = {
+        nb.name: nb_losses,
+        svm.name: svm_losses,
+        naive.name: naive_losses
     }
     svm_model_params = {
         svm.name: svm_params
     }
-    write_losses(svm_model_losses,data_balance,"exp2")
+    write_losses(model_losses,data_balance,"exp2")
 
-    return nb_model_losses, svm_model_losses, svm_model_params, np.array(data_balance)*tr_data_size
+    return model_losses, svm_model_params, np.array(data_balance)*tr_data_size
 
     
 def experiment_1(data,labels,cv_split_number):
@@ -279,6 +263,7 @@ def experiment_1(data,labels,cv_split_number):
     svm2_losses = []
     svm3_losses = []
     svm4_losses = []
+    naive_losses = []
 
     svm1_params = []
     svm2_params = []
@@ -287,7 +272,7 @@ def experiment_1(data,labels,cv_split_number):
 
     #data_balance = [0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,1.0]
     #data_balance = [0.01,0.05,0.10]
-    data_balance = [0.01,0.02,0.03]
+    data_balance = [0.01,0.02,0.1]
     for i in data_balance:
         print('Processing: ' + str(i))
         # cross validation training data
@@ -295,13 +280,14 @@ def experiment_1(data,labels,cv_split_number):
         # cross validation labels
         cv_tr_labels = tr_labels[:int(tr_data_size*i)]
 
-        nb1, svm1, svm2, svm3, svm4 = k_fold_cross_validation(cv_tr_data, cv_tr_labels, cv_split_number)
+        nb1, svm1, svm2, svm3, svm4, naive = k_fold_cross_validation(cv_tr_data, cv_tr_labels, cv_split_number)
 
         nb_losses += [nb1.zero_one_loss] # list of lists where each row is cv_split_number
         svm1_losses += [svm1.zero_one_loss]
         svm2_losses += [svm2.zero_one_loss]
         svm3_losses += [svm3.zero_one_loss]
         svm4_losses += [svm4.zero_one_loss]
+        naive_losses += [naive.zero_one_loss]
 
         svm1_params += [svm1.params]
         svm2_params += [svm2.params]
@@ -313,6 +299,7 @@ def experiment_1(data,labels,cv_split_number):
                     svm2.name: svm2_losses,
                     svm3.name: svm3_losses,
                     svm4.name: svm4_losses,
+                    naive.name: naive_losses
     }
     model_params = {
         svm1.name: svm1_params,
@@ -334,7 +321,7 @@ if __name__ == "__main__":
         exp_no = sys.argv[2]
 
         cv_split_number = 10
-        num_features = 5
+        num_features = 10
         fast = False
         tr_data,tr_labels = get_data(sys.argv[1])
 
@@ -346,13 +333,13 @@ if __name__ == "__main__":
         if fast:
             no_examples = 50
         
-        line_types = ['y--', 'b--', 'r--', 'k--', 'o--']
+        line_types = ['y--', 'b--', 'r--', 'k--', 'o--', 'g--']
 
         if exp_no == "1" or exp_no == "-1":
             model_losses, model_params, cv_training_sizes = experiment_1(tr_data, tr_labels, cv_split_number)
             plot_experiment_losses(model_losses, cv_training_sizes, 'Cross Validation Sample Size', cv_split_number, line_types, './figures/exp_1_losses.png')
             plot_experiment_params(model_params, cv_training_sizes, cv_split_number, './figures/exp_1_params_{}.png')
         if exp_no == "2" or exp_no == "-2":
-            nb_model_losses, svm_model_losses, svm_model_params, cv_training_sizes = experiment_2(tr_data, tr_labels, num_features, cv_split_number)
-            plot_experiment_losses(svm_model_losses, cv_training_sizes, 'Cross Validation Sample Size', cv_split_number, line_types, './figures/exp_2_losses.png')
+            model_losses, svm_model_params, cv_training_sizes = experiment_2(tr_data, tr_labels, num_features, cv_split_number)
+            plot_experiment_losses(model_losses, cv_training_sizes, 'Cross Validation Sample Size', cv_split_number, line_types, './figures/exp_2_losses.png')
             plot_experiment_params(svm_model_params, cv_training_sizes, cv_split_number, './figures/exp_2_params_{}.png')
