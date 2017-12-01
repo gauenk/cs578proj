@@ -79,8 +79,7 @@ def generate_vectors(dataset, common_words):
 #     train_f, train_l = generate_vectors(train_data, common_words)
 #     return train_f,train_l,common_words
 
-def get_data(fn):
-    input_data = "data/training_clean.csv"
+def get_data(input_data):
     df = pd.read_csv(input_data)
     mat = df.as_matrix()
     print(mat.shape)
