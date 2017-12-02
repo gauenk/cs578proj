@@ -146,31 +146,13 @@ def plot_experiment_params(model_params, xaxis_var, cv_split_number, fn=None):
             filename = fn.format(model.replace(' ', '_').replace('=', '').replace(':', '').replace('.', '_'))
             plt.savefig(filename, bbox_inches='tight')
         plt.clf()
-            
 
-    
-def test_model():
-    if len(sys.argv) != 4:
-        print("System Usage: python main.py <trainingDataFilename> <testingDataFilename> <modelIdx>")
-        print("modelIdx\n   1 : naive bayes \n   2 : svm\n")
-        sys.exit()
-    else:
-        tr_data,tr_labels,cw = get_data(sys.argv[1])
-        te_data,te_labels,_ = get_data(sys.argv[2])
-
-        if sys.argv[3] == "1":
-            model = MultinomialNB()
-            post_fix = "NB"
-        elif sys.argv[3] == "2":
-            model = LinearSVC(penalty='l1',C=.1,dual=False)
-            post_fix = "SVM"
-        else:
-            sys.exit("modelIdx must be in {1,2}")
-
-        model.fit(tr_data,tr_labels)
-        preds = model.predict(te_data)
-        loss = zero_one_loss(preds,te_labels)
-        print("ZERO-ONE-LOSS-" + post_fix +" {0:.4f}".format(round(float(loss),4)))
+def write_results(model_losses, output_file):
+    with open(output_file, 'w+') as f:
+        for model in model_losses.keys():
+            f.write('Model: ' + model)
+            f.write('\nLoss: ' + str(np.mean(model_losses[model][-1])))
+            f.write('\n\n')
 
 def greedy_subset_svm(tr_data, tr_labels, num_features, split_number, te_data, te_labels):
     nb1 = ClassifierResult('GS Naive Bayes', [], [])
@@ -258,7 +240,8 @@ def experiment_2(data, labels, num_features, cv_split_number, te_data, te_labels
 
     svm_params = []
 
-    data_balance = [0.01, 0.02, 0.1]
+    data_balance = [0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,1.0]
+    #data_balance = [0.01, 0.02, 0.03]
     for i in data_balance:
         print('Processing: ' + str(i))
 
@@ -322,7 +305,7 @@ def experiment_1(data,labels,cv_split_number, te_data, te_labels):
 
     #data_balance = [0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,1.0]
     #data_balance = [0.01,0.05,0.10]
-    data_balance = [0.01,0.02,0.1]
+    #data_balance = [0.01,0.02,0.03]
     for i in data_balance:
         print('Processing: ' + str(i))
         # cross validation training data
@@ -377,35 +360,33 @@ def experiment_1(data,labels,cv_split_number, te_data, te_labels):
     return model_losses, model_params, np.array(data_balance)*tr_data_size
 
 if __name__ == "__main__":
+    if len(sys.argv) < 3:
+        print("Usage: python main.py <data_file> <exp_no>")
+    exp_no = sys.argv[2]
 
-    if False:
-        test_model()
-    else:
-        if len(sys.argv) < 3:
-            print("Usage: python main.py <data_file> <exp_no>")
-        exp_no = sys.argv[2]
+    cv_split_number = 10
+    num_features = 10
+    fast = False
+    tr_data,tr_labels = get_data('data/training_clean.csv')
+    te_data,te_labels = get_data('data/testing_clean.csv')
 
-        cv_split_number = 10
-        num_features = 10
-        fast = False
-        tr_data,tr_labels = get_data('data/training_clean.csv')
-        te_data,te_labels = get_data('data/testing_clean.csv')
+    # Randomize data order
+    tr_data, tr_labels = shuffle(tr_data, tr_labels)
 
-        # Randomize data order
-        tr_data, tr_labels = shuffle(tr_data, tr_labels)
+    no_examples = len(tr_data)
+    #no_examples = 100
+    if fast:
+        no_examples = 50
+    
+    line_types = ['y--', 'b--', 'r--', 'k--', 'o--', 'g--', 'y-', 'b-', 'r-', 'k-', 'o-', 'g-']
 
-        no_examples = len(tr_data)
-        #no_examples = 100
-        if fast:
-            no_examples = 50
-        
-        line_types = ['y--', 'b--', 'r--', 'k--', 'o--', 'g--', 'y-', 'b-', 'r-', 'k-', 'o-', 'g-']
-
-        if exp_no == "1" or exp_no == "-1":
-            model_losses, model_params, cv_training_sizes = experiment_1(tr_data, tr_labels, cv_split_number, te_data, te_labels)
-            plot_experiment_losses(model_losses, cv_training_sizes, 'Cross Validation Sample Size', cv_split_number, line_types, './figures/exp_1_losses.png')
-            plot_experiment_params(model_params, cv_training_sizes, cv_split_number, './figures/exp_1_params_{}.png')
-        if exp_no == "2" or exp_no == "-2":
-            model_losses, svm_model_params, cv_training_sizes = experiment_2(tr_data, tr_labels, num_features, cv_split_number, te_data, te_labels)
-            plot_experiment_losses(model_losses, cv_training_sizes, 'Cross Validation Sample Size', cv_split_number, line_types, './figures/exp_2_losses.png')
-            plot_experiment_params(svm_model_params, cv_training_sizes, cv_split_number, './figures/exp_2_params_{}.png')
+    if exp_no == "1" or exp_no == "-1":
+        model_losses, model_params, cv_training_sizes = experiment_1(tr_data, tr_labels, cv_split_number, te_data, te_labels)
+        plot_experiment_losses(model_losses, cv_training_sizes, 'Cross Validation Sample Size', cv_split_number, line_types, './figures/exp_1_losses.png')
+        plot_experiment_params(model_params, cv_training_sizes, cv_split_number, './figures/exp_1_params_{}.png')
+        write_results(model_losses, './output/exp1.res')
+    if exp_no == "2" or exp_no == "-2":
+        model_losses, svm_model_params, cv_training_sizes = experiment_2(tr_data, tr_labels, num_features, cv_split_number, te_data, te_labels)
+        plot_experiment_losses(model_losses, cv_training_sizes, 'Cross Validation Sample Size', cv_split_number, line_types, './figures/exp_2_losses.png')
+        plot_experiment_params(svm_model_params, cv_training_sizes, cv_split_number, './figures/exp_2_params_{}.png')
+        write_results(model_losses, './output/exp2.res')
