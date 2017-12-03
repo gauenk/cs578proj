@@ -54,7 +54,7 @@ def k_fold_cross_validation(tr_data,tr_labels,split_number, te_data, te_labels):
         svm2.zero_one_loss += [loss]
         svm2.params += [svm.coef_.ravel()]
 
-        preds = svm.predict(te_data)
+        preds = svm_c1.predict(te_data)
         loss = zero_one_loss(preds,te_labels)        
         svm2.test_loss += [loss]
 
@@ -66,7 +66,7 @@ def k_fold_cross_validation(tr_data,tr_labels,split_number, te_data, te_labels):
         svm3.zero_one_loss += [loss]
         svm3.params += [svm.coef_.ravel()]
 
-        preds = svm.predict(te_data)
+        preds = svm_c2.predict(te_data)
         loss = zero_one_loss(preds,te_labels)        
         svm3.test_loss += [loss]
 
@@ -78,7 +78,7 @@ def k_fold_cross_validation(tr_data,tr_labels,split_number, te_data, te_labels):
         svm4.zero_one_loss += [loss]
         svm4.params += [svm.coef_.ravel()]
 
-        preds = svm.predict(te_data)
+        preds = svm_c3.predict(te_data)
         loss = zero_one_loss(preds,te_labels)        
         svm4.test_loss += [loss]
 
