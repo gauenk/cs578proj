@@ -192,9 +192,9 @@ def experiment_1(data,labels,cv_split_number):
     svm_c2_params = []
     svm_c3_params = []
 
-    #data_balance = [0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,1.0]
+    data_balance = [0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,1.0]
     #data_balance = [0.01,0.05,0.10]
-    data_balance = [0.01,0.02,0.03]
+    #data_balance = [0.01,0.02,0.03]
     for i in data_balance:
         # cross validation training data
         cv_tr_data = tr_data[:int(tr_data_size*i),:]
@@ -239,8 +239,8 @@ def experiment_2(tr_data,tr_labels,te_data,te_labels,cv_split_number):
     svm_c1_losses = []
     svm_c2_losses = []
     svm_c3_losses = []
-    #data_balance = [0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,1.0]
-    data_balance = [0.01,0.05,0.10,0.15]
+    data_balance = [0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,1.0]
+    #data_balance = [0.01,0.05,0.10,0.15]
     for i in data_balance:
         # cross validation training data
         cv_tr_data = tr_data[:int(tr_data_size*i),:]
