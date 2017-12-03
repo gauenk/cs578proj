@@ -11,3 +11,9 @@ class SVMClassifierResult(ClassifierResult):
     def __init__(self, name, zo_loss, test_loss, params):
         ClassifierResult.__init__(self, name, test_loss, zo_loss)
         self.params = params
+
+class GSSVMClassifierResult(SVMClassifierResult):
+    def __init__(self, name, zo_loss, test_loss, params):
+        ClassifierResult.__init__(self, name, test_loss, zo_loss)
+        self.params = params
+        self.columns = []
