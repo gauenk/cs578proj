@@ -121,7 +121,8 @@ def plot_experiment_losses(model_losses, xaxis_var, xlabel, cv_split_number, lin
             model_lines[model] = plt.errorbar(xaxis_var,mean,\
                     sderr,fmt=line_types[i],label=model)
             i += 1
-    plt.legend(list(model_lines.values()),list(model_lines.keys()))
+    #plt.legend(list(model_lines.values()),list(model_lines.keys()))
+    plt.legend(list(model_lines.values()),list(model_lines.keys()), bbox_to_anchor=(1.04,0), loc="lower left", borderaxespad=0)
     plt.xlabel(xlabel)
     plt.ylabel("Zero-One Loss")
     if fn is None:
@@ -290,8 +291,6 @@ def experiment_1(data,labels,cv_split_number, te_data, te_labels):
     svm_c1_losses = []
     svm_c2_losses = []
     svm_c3_losses = []
-    data_balance = [0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,1.0]
-    #data_balance = [0.01,0.05,0.10,0.15]
 
     svm1_losses = []
     svm2_losses = []
@@ -369,9 +368,9 @@ def experiment_1(data,labels,cv_split_number, te_data, te_labels):
     return model_losses, model_params, np.array(data_balance)*tr_data_size
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Usage: python main.py <data_file> <exp_no>")
-    exp_no = sys.argv[2]
+    if len(sys.argv) < 2:
+        print("Usage: python main.py <exp_no>")
+    exp_no = sys.argv[1]
 
     cv_split_number = 10
     num_features = 10
