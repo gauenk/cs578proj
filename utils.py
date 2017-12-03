@@ -79,8 +79,7 @@ def generate_vectors(dataset, common_words):
 #     train_f, train_l = generate_vectors(train_data, common_words)
 #     return train_f,train_l,common_words
 
-def get_data(fn):
-    input_data = "data/training_clean.csv"
+def get_data(input_data):
     df = pd.read_csv(input_data)
     mat = df.as_matrix()
     print(mat.shape)
@@ -122,8 +121,6 @@ def write_stats(model_losses):
 
         
 def write_losses(model_losses,data_balance,exp_no):
-
-
     fn = "./output/" + exp_no + "_" +str(datetime.datetime.now()).replace(" ","_").replace(":","-").replace(".","")
     for idx in range(len(data_balance)):
         fn_c = fn + "_data_bal_"+str(data_balance[idx]) + ".csv"
