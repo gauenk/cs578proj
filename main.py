@@ -250,9 +250,9 @@ def experiment_2(data, labels, num_features, cv_split_number, te_data, te_labels
 
     svm_columns = []
 
-    #data_balance = [0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,1.0]
+    data_balance = [0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,1.0]
     #data_balance = [0.01,0.05,0.10]
-    data_balance = [0.01,0.02]
+    #data_balance = [0.01,0.02]
     for i in data_balance:
         print('Processing: ' + str(i))
 
