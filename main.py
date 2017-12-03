@@ -315,7 +315,6 @@ def experiment_1(data,labels,cv_split_number, te_data, te_labels):
     data_balance = [0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,1.0]
     #data_balance = [0.01,0.05,0.10]
     #data_balance = [0.01,0.02,0.03]
->>>>>>> ad818f7773be44a4dcda3b73b949192678f67b7f
     for i in data_balance:
         print('Processing: ' + str(i))
         # cross validation training data
