@@ -54,7 +54,7 @@ def k_fold_cross_validation(tr_data,tr_labels,split_number, te_data, te_labels):
         svm2.zero_one_loss += [loss]
         svm2.params += [svm.coef_.ravel()]
 
-        preds = svm.predict(te_data)
+        preds = svm_c1.predict(te_data)
         loss = zero_one_loss(preds,te_labels)        
         svm2.test_loss += [loss]
 
@@ -66,7 +66,7 @@ def k_fold_cross_validation(tr_data,tr_labels,split_number, te_data, te_labels):
         svm3.zero_one_loss += [loss]
         svm3.params += [svm.coef_.ravel()]
 
-        preds = svm.predict(te_data)
+        preds = svm_c2.predict(te_data)
         loss = zero_one_loss(preds,te_labels)        
         svm3.test_loss += [loss]
 
@@ -78,7 +78,7 @@ def k_fold_cross_validation(tr_data,tr_labels,split_number, te_data, te_labels):
         svm4.zero_one_loss += [loss]
         svm4.params += [svm.coef_.ravel()]
 
-        preds = svm.predict(te_data)
+        preds = svm_c3.predict(te_data)
         loss = zero_one_loss(preds,te_labels)        
         svm4.test_loss += [loss]
 
@@ -157,7 +157,7 @@ def write_results(model_losses, output_file):
 
 def greedy_subset_svm(tr_data, tr_labels, num_features, split_number, te_data, te_labels):
     nb1 = ClassifierResult('GS Naive Bayes', [], [])
-    svm1 = SVMClassifierResult('GS svm: c = 0.5', [], [], [])
+    svm1 = GSSVMClassifierResult('GS svm: c = 0.5', [], [], [])
     naive = ClassifierResult('Naive Classifier', [], [])
 
     for i in range(split_number):
@@ -183,8 +183,9 @@ def greedy_subset_svm(tr_data, tr_labels, num_features, split_number, te_data, t
                 svm = LinearSVC(penalty = 'l2', C = 0.5, dual=False)
                 params_to_keep.add(k)
 
-                svm.fit(cv_training_data[:, list(params_to_keep)], cv_training_labels)
-                preds = svm.predict(cv_validation_data[:, list(params_to_keep)])
+                lparams = list(params_to_keep)
+                svm.fit(cv_training_data[:, lparams], cv_training_labels)
+                preds = svm.predict(cv_validation_data[:, lparams])
                 loss = zero_one_loss(preds, cv_validation_labels)
                 params_to_keep.discard(k)
                 if (loss <= best_loss):
@@ -193,25 +194,31 @@ def greedy_subset_svm(tr_data, tr_labels, num_features, split_number, te_data, t
             params_to_keep.add(best_feature)
         
         # We now have the best features
+        lparams = list(params_to_keep)
         svm = LinearSVC(penalty = 'l2', C = 0.5, dual=False)
-        svm.fit(cv_training_data[:, list(params_to_keep)], cv_training_labels)
+        svm.fit(cv_training_data[:, lparams], cv_training_labels)
         # Use the real cross validation testing data now to get an accurate loss
-        preds = svm.predict(cv_te_data[:, list(params_to_keep)])
+        preds = svm.predict(cv_te_data[:, lparams])
         loss = zero_one_loss(preds, cv_te_labels)
         svm1.zero_one_loss += [loss]
-        svm1.params += [svm.coef_.ravel()]
+        params = [0 for x in range(cv_training_data.shape[1])]
+        coefs = svm.coef_.ravel()
+        for i in range(0, len(lparams)):
+            params[lparams[i]] = coefs[i]
+        svm1.params += [params]
+        svm1.columns += [lparams]
 
-        preds = svm.predict(te_data[:, list(params_to_keep)])
+        preds = svm.predict(te_data[:, lparams])
         loss = zero_one_loss(preds,te_labels)        
         svm1.test_loss += [loss]
 
         nb = MultinomialNB()
-        nb.fit(cv_training_data[:, list(params_to_keep)], cv_training_labels)
-        preds = nb.predict(cv_te_data[:, list(params_to_keep)])
+        nb.fit(cv_training_data[:, lparams], cv_training_labels)
+        preds = nb.predict(cv_te_data[:, lparams])
         loss = zero_one_loss(preds,cv_te_labels)        
         nb1.zero_one_loss += [loss]
 
-        preds = nb.predict(te_data[:, list(params_to_keep)])
+        preds = nb.predict(te_data[:, lparams])
         loss = zero_one_loss(preds,te_labels)        
         nb1.test_loss += [loss]
 
@@ -241,9 +248,11 @@ def experiment_2(data, labels, num_features, cv_split_number, te_data, te_labels
 
     svm_params = []
 
+    svm_columns = []
+
     data_balance = [0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,1.0]
     #data_balance = [0.01,0.05,0.10]
-    #data_balance = [0.01,0.02,0.03]
+    #data_balance = [0.01,0.02]
     for i in data_balance:
         print('Processing: ' + str(i))
 
@@ -263,6 +272,7 @@ def experiment_2(data, labels, num_features, cv_split_number, te_data, te_labels
         naive_losses_t += [naive.test_loss]
 
         svm_params += [svm.params]
+        svm_columns += [svm.columns]
     
     model_losses = {
         nb.name: nb_losses,
@@ -275,7 +285,11 @@ def experiment_2(data, labels, num_features, cv_split_number, te_data, te_labels
     svm_model_params = {
         svm.name: svm_params
     }
+    svm_columns = {
+        svm.name: svm_columns
+    }
     write_losses(model_losses,data_balance,"exp2")
+    write_columns(svm_columns,data_balance,"exp2")
 
     return model_losses, svm_model_params, np.array(data_balance)*tr_data_size
 

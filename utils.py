@@ -136,5 +136,21 @@ def write_losses(model_losses,data_balance,exp_no):
             writer.writerow(title)
             for val in data.T:
                 writer.writerow(val)
-        
+
+def write_columns(columns, data_balance, exp_no):
+    fn = './output/' + exp_no + "_columns_" +str(datetime.datetime.now()).replace(" ","_").replace(":","-").replace(".","")
+    for idx in range(len(data_balance)):
+        fn_c = fn + "_data_bal_"+str(data_balance[idx]) + ".cols"
+        with open(fn_c, 'w') as csv_file:
+            writer = csv.writer(csv_file)
+            title = []
+            data = []
+            for key,value in columns.items():
+                #title += [key+"_"+str(data_balance[idx])]
+                title += [key]
+                data += [value[idx]]
+            data = np.array(data)
+            writer.writerow(title)
+            for val in data.T:
+                writer.writerow(val)
 
