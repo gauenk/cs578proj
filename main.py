@@ -159,6 +159,7 @@ def greedy_subset_svm(tr_data, tr_labels, num_features, split_number, te_data, t
     nb1 = ClassifierResult('GS Naive Bayes', [], [])
     svm1 = GSSVMClassifierResult('GS svm: c = 0.5', [], [], [])
     naive = ClassifierResult('Naive Classifier', [], [])
+    greed = GreedyResult('Greedy SVM', num_features)
 
     for i in range(split_number):
         print('Fold: ' + str(i))
@@ -171,7 +172,7 @@ def greedy_subset_svm(tr_data, tr_labels, num_features, split_number, te_data, t
         cv_training_labels = cv_tr_labels[:int(len(cv_tr_labels)*.9)]
         cv_validation_data = np.array(cv_tr_data[int(len(cv_tr_data)*.9):])
         cv_validation_labels = cv_tr_labels[int(len(cv_tr_labels)*.9):]
-        
+       
         params_to_keep = set()
         for j in range(num_features):
             # print('Feature: ' + str(j))
@@ -192,6 +193,7 @@ def greedy_subset_svm(tr_data, tr_labels, num_features, split_number, te_data, t
                     best_feature = k
                     best_loss = loss
             params_to_keep.add(best_feature)
+            greed.losses[j] = greed.losses[j] + [best_loss]
         
         # We now have the best features
         lparams = list(params_to_keep)
@@ -231,7 +233,7 @@ def greedy_subset_svm(tr_data, tr_labels, num_features, split_number, te_data, t
         loss = zero_one_loss(preds, te_labels)
         naive.test_loss += [loss]
     
-    return nb1, svm1, naive
+    return nb1, svm1, naive, greed
 
 def experiment_2(data, labels, num_features, cv_split_number, te_data, te_labels):
     tr_data = data
@@ -250,8 +252,8 @@ def experiment_2(data, labels, num_features, cv_split_number, te_data, te_labels
 
     svm_columns = []
 
-    data_balance = [0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,1.0]
-    #data_balance = [0.01,0.05,0.10]
+    #data_balance = [0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,1.0]
+    data_balance = [0.01,0.05,0.10]
     #data_balance = [0.01,0.02]
     for i in data_balance:
         print('Processing: ' + str(i))
@@ -381,6 +383,38 @@ def experiment_1(data,labels,cv_split_number, te_data, te_labels):
 
     return model_losses, model_params, np.array(data_balance)*tr_data_size
 
+def experiment_3(data, labels, num_features, cv_split_number, te_data, te_labels):
+    tr_data = data
+    tr_labels = labels
+    tr_data_size = len(tr_data)
+
+    nb_losses = []
+    svm_losses = []
+    naive_losses = []
+
+    nb_losses_t = []
+    svm_losses_t = []
+    naive_losses_t = []
+
+    svm_params = []
+
+    svm_columns = []
+
+    #data_balance = [0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,1.0]
+    data_balance = [0.2]
+    #data_balance = [0.01,0.02]
+    for i in data_balance:
+        print('Processing: ' + str(i))
+
+        # cross validation training data
+        cv_tr_data = tr_data[:int(tr_data_size*i),:]
+        # cross validation labels
+        cv_tr_labels = tr_labels[:int(tr_data_size*i)]
+
+        nb, svm, naive, greed = greedy_subset_svm(cv_tr_data, cv_tr_labels, num_features, cv_split_number, te_data, te_labels)
+    return greed
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python main.py <exp_no>")
@@ -407,8 +441,26 @@ if __name__ == "__main__":
         plot_experiment_losses(model_losses, cv_training_sizes, 'Cross Validation Sample Size', cv_split_number, line_types, './figures/exp_1_losses.png')
         plot_experiment_params(model_params, cv_training_sizes, cv_split_number, './figures/exp_1_params_{}.png')
         write_results(model_losses, './output/exp1.res')
+
     if exp_no == "2" or exp_no == "-2":
         model_losses, svm_model_params, cv_training_sizes = experiment_2(tr_data, tr_labels, num_features, cv_split_number, te_data, te_labels)
         plot_experiment_losses(model_losses, cv_training_sizes, 'Cross Validation Sample Size', cv_split_number, line_types, './figures/exp_2_losses.png')
         plot_experiment_params(svm_model_params, cv_training_sizes, cv_split_number, './figures/exp_2_params_{}.png')
         write_results(model_losses, './output/exp2.res')
+
+    if exp_no == "3":
+        print("hello world")
+        greed = experiment_3(tr_data, tr_labels, 90, cv_split_number, te_data, te_labels)
+        greed_means = [np.mean(greed.losses[i]) for i in range(90)]
+        greed_sds = [np.std(greed.losses[i]) for i in range(90)]
+        greed_nums = [i + 1 for i in range(90)]
+        plt.errorbar(greed_nums, greed_means, yerr = greed_sds, fmt = '-')
+        plt.xlabel('Number of Features')
+        plt.ylabel('Zero One Error')
+        plt.title('Greedy SVM Error Vs. No. Features')
+        plt.savefig('./figures/greedy_by_feature.png', bbox_inches='tight')
+        plt.show()
+        dicks = input('wer r ur manners')
+
+
+
