@@ -263,7 +263,7 @@ def experiment_2(data, labels, num_features, cv_split_number, te_data, te_labels
         # cross validation labels
         cv_tr_labels = tr_labels[:int(tr_data_size*i)]
 
-        nb, svm, naive = greedy_subset_svm(cv_tr_data, cv_tr_labels, num_features, cv_split_number, te_data, te_labels)
+        nb, svm, naive, greed = greedy_subset_svm(cv_tr_data, cv_tr_labels, num_features, cv_split_number, te_data, te_labels)
 
         nb_losses += [nb.zero_one_loss] # list of lists where each row is cv_split_number
         svm_losses += [svm.zero_one_loss]
@@ -421,7 +421,7 @@ if __name__ == "__main__":
     exp_no = sys.argv[1]
 
     cv_split_number = 10
-    num_features = 10
+    num_features = 30
     fast = False
     tr_data,tr_labels = get_data('data/training_clean.csv')
     te_data,te_labels = get_data('data/testing_clean.csv')
