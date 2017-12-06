@@ -537,7 +537,6 @@ if __name__ == "__main__":
         plt.title('Greedy SVM Error Vs. No. Features')
         plt.savefig('./figures/greedy_by_feature.png', bbox_inches='tight')
         plt.show()
-        dicks = input('wer r ur manners')
 
 
 
