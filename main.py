@@ -13,9 +13,84 @@ from sklearn.datasets import make_classification
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import LinearSVC
 from sklearn.utils import shuffle
+from sklearn import svm
+from sklearn.multiclass import OneVsRestClassifier
 
 from ClassifierResult import *
 from utils import *
+
+from sklearn.metrics import roc_curve,auc
+
+def generate_roc_curves(tr_data,tr_labels,split_number, te_data, te_labels):
+
+    # zero-one losses for naive bayes (nb) and support vector machine (svm)
+    params_to_keep = set()
+    for j in range(num_features):
+        best_feature = 0
+        best_loss = 1.0
+        for k in range(tr_data.shape[1]):
+            if k in params_to_keep: continue
+            svm = LinearSVC(penalty = 'l2', C = 0.5, dual=False)
+            params_to_keep.add(k)
+
+            lparams = list(params_to_keep)
+            svm.fit(tr_data[:, lparams], tr_labels)
+            preds = svm.predict(tr_data[:, lparams])
+            loss = zero_one_loss(preds, tr_labels)
+            params_to_keep.discard(k)
+            if (loss <= best_loss):
+                best_feature = k
+                best_loss = loss
+        params_to_keep.add(best_feature)
+
+    # We now have the best features
+    lparams = list(params_to_keep)
+    nb1 = ClassifierResult('Naive Bayes (L1 features)', [], [])
+    svm1 = SVMClassifierResult('svm:_c_=_1.0', [], [], [])
+    svm2 = SVMClassifierResult('svm:_c_=_0.75', [], [], [])
+    svm3 = SVMClassifierResult('svm:_c_=_0.50', [], [], [])
+    svm4 = SVMClassifierResult('svm:_c_=_0.25', [], [], [])
+    naive = ClassifierResult('Naive Classifier', [], [])
+
+    ## SVM DECLARED HERE TO BE INIT-ed WITH THE DATA FOR CROSS VALIDATION
+    classifiers = {'svm:_c_=_1':svm1, 'svm:_c_=_.75':svm2,
+                   'svm:_c_=_.50':svm3, 'svm:_c_=_.25':svm4}
+    random_state = np.random.RandomState(0)
+
+    for model_type in classifiers:
+        train_data = tr_data
+        test_data = te_data
+        if model_type == "svm:_c_=_1":
+            model = LinearSVC(penalty='l1',C=1,dual=False)
+        elif model_type == "svm:_c_=_.75":
+            model = LinearSVC(penalty='l1',C=0.75,dual=False)
+        elif model_type == "svm:_c_=_.50":
+            model = LinearSVC(penalty='l1',C=0.50,dual=False)
+        elif model_type == "svm:_c_=_.25":
+            model = LinearSVC(penalty='l1',C=0.25,dual=False)
+        # elif model_type == "naive bayes":
+        #     model = MultinomialNB()
+        model.fit(train_data,tr_labels)            
+        y_score = model.decision_function(test_data)
+        print(y_score)
+        print("-=-=-")
+        print(te_labels)
+        fpr, tpr,_ = roc_curve(te_labels-1,y_score)
+        print(fpr,tpr)
+        roc_auc = auc(fpr,tpr)
+        plt.figure()
+        lw = 2
+        plt.plot(fpr,tpr,color="darkorange",lw=lw, label="ROC Curve Area = {:.4f}".format(roc_auc))
+        plt.plot([0,1],[0,1],color="navy",lw=lw, linestyle='--')
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title('Receiver operating characteristic example')
+        plt.legend(loc="lower right")
+        fn = "figures/ROC_" + model_type + ".png"
+        plt.savefig(fn,bbox_inches='tight')
+        plt.clf()
 
 
 def k_fold_cross_validation(tr_data,tr_labels,split_number, te_data, te_labels):
@@ -28,7 +103,6 @@ def k_fold_cross_validation(tr_data,tr_labels,split_number, te_data, te_labels):
     svm3 = SVMClassifierResult('svm: c = 0.50', [], [], [])
     svm4 = SVMClassifierResult('svm: c = 0.25', [], [], [])
     naive = ClassifierResult('Naive Classifier', [], [])
-
 
     for i in range(split_number):
         cv_tr_data,cv_tr_labels,cv_te_data,cv_te_labels\
@@ -338,6 +412,7 @@ def experiment_1(data,labels,cv_split_number, te_data, te_labels):
         cv_tr_labels = tr_labels[:int(tr_data_size*i)]
 
         nb1, svm1, svm2, svm3, svm4, naive = k_fold_cross_validation(cv_tr_data, cv_tr_labels, cv_split_number, te_data, te_labels)
+        roc_curve(cv_tr_data, cv_tr_labels, cv_split_number, te_data, te_labels)
 
         nb_losses += [nb1.zero_one_loss] # list of lists where each row is cv_split_number
         svm1_losses += [svm1.zero_one_loss]
@@ -436,6 +511,8 @@ if __name__ == "__main__":
     
     line_types = ['y--', 'b--', 'r--', 'k--', 'o--', 'g--', 'y-', 'b-', 'r-', 'k-', 'o-', 'g-']
 
+    generate_roc_curves(tr_data, tr_labels, cv_split_number, te_data, te_labels)
+    
     if exp_no == "1" or exp_no == "-1":
         model_losses, model_params, cv_training_sizes = experiment_1(tr_data, tr_labels, cv_split_number, te_data, te_labels)
         plot_experiment_losses(model_losses, cv_training_sizes, 'Cross Validation Sample Size', cv_split_number, line_types, './figures/exp_1_losses.png')
